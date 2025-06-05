@@ -30,6 +30,12 @@ if os.path.exists(pred_path):
             "Prediction for Team A": "Dự đoán Đội A",
             "Prediction for Team B": "Dự đoán Đội B"
         })
+        def fix_draw(row):
+            if row["Dự đoán Đội A"] == "D" or row["Dự đoán Đội B"] == "D":
+                row["Dự đoán Đội A"] = "D"
+                row["Dự đoán Đội B"] = "D"
+            return row
+        pred_df = pred_df.apply(fix_draw, axis=1)
         def highlight_prediction(val):
             if val == "W":
                 return "background-color: #00b894; color: white"

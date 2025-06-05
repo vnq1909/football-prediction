@@ -189,15 +189,20 @@ with tab1:
         st.subheader("Tổng quan 5 mùa gần nhất")
         st.dataframe(overview_table, use_container_width=True, hide_index=True)
         goals_per_year = df.groupby('year')['gf'].sum()
+        # Biểu đồ: Số trận & Tổng bàn thắng theo năm
         st.plotly_chart(plotly_bar_line(matches_per_year, goals_per_year), use_container_width=True)
         result_counts = df['result'].value_counts()
+        # Biểu đồ: Tỷ lệ Thắng/Hòa/Thua
         st.plotly_chart(plotly_pie(result_counts), use_container_width=True)
         col1, col2, col3 = st.columns(3)
         with col1:
+            # Biểu đồ: Phân bố số bàn thắng (GF)
             st.plotly_chart(plotly_hist(df['gf'].dropna(), 'Phân bố số bàn thắng (GF)', 'blue', 'Bàn thắng/trận'), use_container_width=True)
         with col2:
+            # Biểu đồ: Phân bố số cú sút (sh)
             st.plotly_chart(plotly_hist(df['sh'].dropna(), 'Phân bố số cú sút (sh)', 'orange', 'Số cú sút/trận'), use_container_width=True)
         with col3:
+            # Biểu đồ: Phân bố xG
             st.plotly_chart(plotly_hist(df['xg'].dropna(), 'Phân bố xG', 'green', 'xG/trận'), use_container_width=True)
         team_stats = df.groupby('team').agg(
             matches=('result', 'count'),
@@ -210,11 +215,13 @@ with tab1:
         team_stats['winrate'] = (team_stats['win'] / team_stats['matches'] * 100).round(2)
         st.subheader("Thành tích các đội bóng")
         st.dataframe(team_stats, use_container_width=True, hide_index=True)
+        # Biểu đồ: Thành tích các đội (Win/Draw/Lose)
         st.plotly_chart(plotly_team_stats(team_stats), use_container_width=True)
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
         df = df.sort_values('date')
         df['points'] = df['result'].map({'W':3, 'D':1, 'L':0})
         points_by_date = df.groupby('date')['points'].sum().cumsum()
+        # Biểu đồ: Tích lũy điểm theo thời gian
         st.plotly_chart(plotly_line(points_by_date), use_container_width=True)
         top5_xg = df.groupby('team')[['xg','gf']].sum().sort_values('xg', ascending=False).head(5).reset_index()
         fig_top5 = go.Figure()
@@ -227,7 +234,9 @@ with tab1:
             paper_bgcolor='#181818',
             font_color='#f5f6fa',
         )
+        # Biểu đồ: Top 5 đội có xG cao nhất vs số bàn thật
         st.plotly_chart(fig_top5, use_container_width=True)
+        # Biểu đồ: So sánh xG vs GF
         st.plotly_chart(plotly_scatter(df, 'xg', 'gf', 'team', 'So sánh xG vs GF', 'xG', 'Bàn thắng (GF)'), use_container_width=True)
         if 'captain' in df.columns:
             captain_counts = df['captain'].value_counts().head(10)
@@ -239,6 +248,7 @@ with tab1:
         if 'opp_formation' in df.columns:
             pivot = pd.pivot_table(df, values='result', index='formation', columns='opp_formation', aggfunc=lambda x: (x=='W').mean())
             st.subheader('Tỷ lệ thắng theo formation và opp formation')
+            # Biểu đồ: Tỷ lệ thắng theo formation và opp formation
             st.plotly_chart(plotly_heatmap(pivot, 'Tỷ lệ thắng theo formation và opp formation'), use_container_width=True)
         venue_stats = df.groupby('venue').agg(
             avg_gf=('gf','mean'),
@@ -247,10 +257,13 @@ with tab1:
         ).reset_index()
         st.subheader('Thống kê theo sân (venue)')
         st.dataframe(venue_stats, use_container_width=True, hide_index=True)
+        # Biểu đồ: Phân bố bàn thắng (GF) theo venue
         st.plotly_chart(plotly_box(df, 'venue', 'gf', 'Phân bố bàn thắng (GF) theo venue'), use_container_width=True)
+        # Biểu đồ: Phân bố xG theo venue
         st.plotly_chart(plotly_box(df, 'venue', 'xg', 'Phân bố xG theo venue'), use_container_width=True)
         venue_result = df.groupby(['venue','result']).size().unstack(fill_value=0).reset_index()
         venue_result_melt = venue_result.melt(id_vars='venue', var_name='result', value_name='count')
+        # Biểu đồ: Kết quả theo venue
         st.plotly_chart(plotly_grouped_bar(venue_result_melt, 'venue', 'count', 'result', 'Kết quả theo venue'), use_container_width=True)
         df['g-xg'] = df['gf'] - df['xg']
         df['g/sh'] = df['gf'] / df['sh'].replace(0,np.nan)
@@ -259,6 +272,7 @@ with tab1:
         eff_team = df.groupby('team').agg({'g-xg':'mean','g/sh':'mean','g/sot':'mean','sot%':'mean'}).sort_values('g-xg',ascending=False).reset_index()
         st.subheader('Hiệu quả ghi bàn của các đội')
         st.dataframe(eff_team, use_container_width=True, hide_index=True)
+        # Biểu đồ: Hiệu quả ghi bàn: g-xg vs xg
         st.plotly_chart(plotly_scatter(df, 'xg', 'g-xg', 'team', 'Hiệu quả ghi bàn: g-xg vs xg', 'xG', 'g-xg'), use_container_width=True)
         top_eff = eff_team.head(5)
         fig_top_eff = go.Figure()
@@ -271,6 +285,7 @@ with tab1:
             paper_bgcolor='#181818',
             font_color='#f5f6fa',
         )
+        # Biểu đồ: Top đội hiệu suất dứt điểm cao
         st.plotly_chart(fig_top_eff, use_container_width=True)
         if 'referee' in df.columns:
             ref_stats = df.groupby('referee').agg(
@@ -279,12 +294,14 @@ with tab1:
             ).sort_values('matches',ascending=False).head(10).reset_index()
             st.subheader('Top 10 trọng tài bắt nhiều trận nhất')
             st.dataframe(ref_stats, use_container_width=True, hide_index=True)
+            # Biểu đồ: Top 10 trọng tài bắt nhiều trận nhất
             st.plotly_chart(plotly_bar(ref_stats, 'referee', 'matches', 'Top 10 trọng tài bắt nhiều trận nhất', color='#636e72'), use_container_width=True)
         if 'attendance' in df.columns:
             att_stats = df.groupby('team')['attendance'].mean().sort_values(ascending=False).head(10)
             st.subheader('Trung bình attendance theo đội')
             st.bar_chart(att_stats, use_container_width=True)
             att_win = df.groupby('team').agg({'attendance':'mean','result': lambda x: (x=='W').mean()*100}).reset_index()
+            # Biểu đồ: Correlation attendance và winrate
             st.plotly_chart(plotly_scatter(att_win, 'attendance', 'result', None, 'Correlation attendance và winrate', 'Attendance', 'Winrate (%)'), use_container_width=True)
         overperform = df.groupby('team').agg({'xg':'mean','result': lambda x: (x=='W').mean()*100})
         overperform = overperform.sort_values(['result','xg'], ascending=[False,True]).head(5).reset_index()
@@ -298,6 +315,7 @@ with tab1:
             font_color='#f5f6fa',
             yaxis2=dict(overlaying='y', side='right', title='xG')
         )
+        # Biểu đồ: Top đội overperform (xG thấp, winrate cao)
         st.plotly_chart(fig_over, use_container_width=True)
         choke = df.groupby('team').agg({'xg':'mean','result': lambda x: (x=='W').mean()*100})
         choke = choke.sort_values(['xg','result'], ascending=[False,True]).head(5).reset_index()
@@ -311,6 +329,7 @@ with tab1:
             font_color='#f5f6fa',
             yaxis2=dict(overlaying='y', side='right', title='Winrate')
         )
+        # Biểu đồ: Top đội choke (xG cao, winrate thấp)
         st.plotly_chart(fig_choke, use_container_width=True)
         formation_win = df.groupby('formation').agg({'result': lambda x: (x=='W').mean()*100})
         formation_win = formation_win.sort_values('result', ascending=False).head(10).reset_index()
@@ -331,6 +350,7 @@ with tab1:
                 paper_bgcolor='#181818',
                 font_color='#f5f6fa',
             )
+            # Biểu đồ: Top thủ môn cứu thua tốt nhất (xGA thấp hơn GA)
             st.plotly_chart(fig_gk, use_container_width=True)
     else:
         st.warning("Không tìm thấy dữ liệu La Liga.") 
